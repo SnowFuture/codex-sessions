@@ -93,8 +93,16 @@ func Load(sessionsDir string) ([]Session, error) {
 		return nil, err
 	}
 
+	threadNames, nameErr := loadThreadNames(root)
+	if nameErr != nil {
+		combinedErr = errors.Join(combinedErr, nameErr)
+	}
+
 	sessions := make([]Session, 0, len(byID))
 	for _, s := range byID {
+		if name, ok := threadNames[s.ID]; ok {
+			s.ThreadName = name
+		}
 		// Ensure FilePaths sorted for determinism.
 		sort.Strings(s.FilePaths)
 		sessions = append(sessions, *s)
@@ -228,6 +236,51 @@ type sessionMetaPayload struct {
 	ID        string `json:"id"`
 	Timestamp string `json:"timestamp"`
 	CWD       string `json:"cwd"`
+}
+
+type sessionIndexEntry struct {
+	ID         string `json:"id"`
+	ThreadName string `json:"thread_name"`
+	UpdatedAt  string `json:"updated_at"`
+}
+
+func loadThreadNames(sessionsDir string) (map[string]string, error) {
+	indexPath := filepath.Join(filepath.Dir(filepath.Clean(sessionsDir)), "session_index.jsonl")
+	file, err := os.Open(indexPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return map[string]string{}, nil
+		}
+		return map[string]string{}, fmt.Errorf("open thread name index %s: %w", indexPath, err)
+	}
+	defer file.Close()
+
+	names := make(map[string]string)
+	var combinedErr error
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 64*1024), maxLineSize)
+	for lineNumber := 1; scanner.Scan(); lineNumber++ {
+		line := bytes.TrimSpace(scanner.Bytes())
+		if len(line) == 0 {
+			continue
+		}
+		var entry sessionIndexEntry
+		if err := json.Unmarshal(line, &entry); err != nil {
+			combinedErr = errors.Join(combinedErr,
+				fmt.Errorf("parse %s line %d: %w", filepath.Base(indexPath), lineNumber, err))
+			continue
+		}
+		if strings.TrimSpace(entry.ID) == "" {
+			combinedErr = errors.Join(combinedErr,
+				fmt.Errorf("parse %s line %d: missing session id", filepath.Base(indexPath), lineNumber))
+			continue
+		}
+		names[entry.ID] = entry.ThreadName
+	}
+	if err := scanner.Err(); err != nil {
+		combinedErr = errors.Join(combinedErr, fmt.Errorf("read thread name index %s: %w", indexPath, err))
+	}
+	return names, combinedErr
 }
 
 func describeEntry(entry logEntry) string {
