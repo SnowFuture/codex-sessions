@@ -15,6 +15,7 @@ type Session struct {
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 	WorkingDir string
+	ThreadName string
 	LastAction string
 	FilePaths  []string
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 
@@ -41,13 +42,17 @@ func main() {
 	}
 
 	if *flagNoResume {
-		fmt.Println(selectedID)
+		printSelectedID(os.Stdout, selectedID)
 		return
 	}
 
 	if err := runCodexResume(selectedID, *flagCodexBin, flag.Args()); err != nil {
 		fatalf("codex resume %s: %v", selectedID, err)
 	}
+}
+
+func printSelectedID(w io.Writer, selectedID string) {
+	fmt.Fprintln(w, selectedID)
 }
 
 func runCodexResume(sessionID, codexBin string, extraArgs []string) error {

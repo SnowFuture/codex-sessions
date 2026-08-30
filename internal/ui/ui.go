@@ -55,6 +55,7 @@ func newModel(items []sessions.Session, sessionsRoot, initialStatus string) *mod
 	for i, sess := range items {
 		key := strings.ToLower(strings.Join([]string{
 			sess.ID,
+			sess.ThreadName,
 			sess.WorkingDir,
 			sess.LastAction,
 			sess.CreatedAt.Format(time.RFC3339),
@@ -241,13 +242,16 @@ func (m *model) refreshTable() {
 	m.table.SetCell(0, 0, tview.NewTableCell("Updated").
 		SetSelectable(false).
 		SetStyle(headerStyle))
-	m.table.SetCell(0, 1, tview.NewTableCell("Session ID").
+	m.table.SetCell(0, 1, tview.NewTableCell("Thread Name").
 		SetSelectable(false).
 		SetStyle(headerStyle))
-	m.table.SetCell(0, 2, tview.NewTableCell("Directory").
+	m.table.SetCell(0, 2, tview.NewTableCell("Session ID").
 		SetSelectable(false).
 		SetStyle(headerStyle))
-	m.table.SetCell(0, 3, tview.NewTableCell("Last Action").
+	m.table.SetCell(0, 3, tview.NewTableCell("Directory").
+		SetSelectable(false).
+		SetStyle(headerStyle))
+	m.table.SetCell(0, 4, tview.NewTableCell("Last Action").
 		SetSelectable(false).
 		SetStyle(headerStyle))
 
@@ -256,11 +260,14 @@ func (m *model) refreshTable() {
 		row := i + 1
 		m.table.SetCell(row, 0, tview.NewTableCell(formatTimestamp(sess.UpdatedAt)).
 			SetExpansion(1))
-		m.table.SetCell(row, 1, tview.NewTableCell(sess.ID).
+		m.table.SetCell(row, 1, tview.NewTableCell(formatThreadName(sess.ThreadName)).
+			SetMaxWidth(32).
 			SetExpansion(1))
-		m.table.SetCell(row, 2, tview.NewTableCell(abbreviatePath(sess.WorkingDir, 40)).
+		m.table.SetCell(row, 2, tview.NewTableCell(sess.ID).
 			SetExpansion(1))
-		m.table.SetCell(row, 3, tview.NewTableCell(truncateText(sess.LastAction, 80)).
+		m.table.SetCell(row, 3, tview.NewTableCell(abbreviatePath(sess.WorkingDir, 40)).
+			SetExpansion(1))
+		m.table.SetCell(row, 4, tview.NewTableCell(truncateText(sess.LastAction, 80)).
 			SetExpansion(2))
 	}
 
@@ -354,6 +361,14 @@ func dropLastRune(value string) string {
 		return ""
 	}
 	return string(runes[:len(runes)-1])
+}
+
+func formatThreadName(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "-"
+	}
+	return name
 }
 
 func truncateText(text string, max int) string {

@@ -4,7 +4,8 @@
 
 ## Features
 
-- **Fuzzy search** as you type across session IDs, working directories, timestamps, and last actions.
+- **Fuzzy search** as you type across thread names, session IDs, working directories, timestamps, and last actions.
+- **Thread names** assigned with Codex `/rename` appear in their own column; unnamed sessions display `-`.
 - **Keyboard-first navigation** with arrow keys, Page Up/Down, and instant highlighting.
 - **Quick resume** with `Enter`, invoking `codex resume <session-id>` (or printing the ID with `--no-resume`).
 - **Safe deletion** of a session and all associated log files via `Del`.
@@ -41,6 +42,8 @@ By default the tool scans `~/.codex/sessions`. Command-line flags:
 | `--sessions-dir <path>` | Override the sessions directory (default `~/.codex/sessions`). |
 | `--codex-bin <path>` | Path to the Codex CLI binary to execute (default `codex`). |
 | `--no-resume` | Do not spawn `codex resume`; instead print the selected session ID to stdout. |
+
+The session list reads user-assigned names from `session_index.jsonl` next to the configured sessions directory. Generated conversation titles are not used as a fallback.
 
 ### Keybindings
 
