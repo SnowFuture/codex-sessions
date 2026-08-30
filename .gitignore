@@ -9,6 +9,7 @@
 /bin/
 /build/
 /dist/
+/.worktrees/
 
 # Go build artifacts
 *.test
